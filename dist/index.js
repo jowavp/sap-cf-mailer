@@ -21,8 +21,9 @@ const Mustache = __importStar(require("mustache"));
 const sap_cf_destconn_1 = require("sap-cf-destconn");
 ;
 class SapCfMailer {
-    constructor(destinationName) {
+    constructor(destinationName, transportConfig) {
         this.destinationPromise = sap_cf_destconn_1.readDestination(destinationName || "MAIL");
+        this.transportConfig = transportConfig;
     }
     getTransporter() {
         return __awaiter(this, void 0, void 0, function* () {
@@ -31,15 +32,10 @@ class SapCfMailer {
                 throw (`No SMTP address found in the mail destination. Please define a 'mail.smtp' property in your destination`);
             }
             // create reusable transporter object using the default SMTP transport
-            return nodemailer.createTransport({
-                host: destinationConfiguration["mail.smtp"],
-                port: parseInt(destinationConfiguration["mail.port"] || "587") || 587,
-                secure: false,
-                auth: {
+            return nodemailer.createTransport(Object.assign(Object.assign({}, this.transportConfig), { host: destinationConfiguration["mail.smtp"], port: parseInt(destinationConfiguration["mail.port"] || "587") || 587, secure: false, auth: {
                     user: destinationConfiguration["mail.user"],
                     pass: destinationConfiguration["mail.password"] // generated ethereal password
-                }
-            });
+                } }));
         });
     }
     sendMail(mailOptions) {
@@ -54,16 +50,7 @@ class SapCfMailer {
     }
     sendMailTemplate(mailOptionsIn, mailValues) {
         return __awaiter(this, void 0, void 0, function* () {
-            const mailOptions = Object.assign({}, mailOptionsIn);
-            if (mailOptions.html) {
-                const HtmlTemplate = Mustache.parse(mailOptions.html.toString());
-                mailOptions.html = Mustache.render(HtmlTemplate, mailValues);
-            }
-            if (mailOptions.text) {
-                const TextTemplate = Mustache.parse(mailOptions.text.toString());
-                mailOptions.text = Mustache.render(TextTemplate, mailValues);
-            }
-            return this.sendMail(mailOptions);
+            return this.sendMail(Object.assign(Object.assign({}, mailOptionsIn), { html: mailOptionsIn.html ? Mustache.render(mailOptionsIn.html.toString(), mailValues) : undefined, text: mailOptionsIn.text ? Mustache.render(mailOptionsIn.text.toString(), mailValues) : undefined }));
         });
     }
 }

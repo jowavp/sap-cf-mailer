@@ -2,17 +2,20 @@ import * as nodemailer from 'nodemailer'
 import * as Mustache from 'mustache'
 import { readDestination, IMailDestinationConfiguration, IDestinationData } from 'sap-cf-destconn'
 import Mail = require('nodemailer/lib/mailer')
+import SMTPTransport = require('nodemailer/lib/smtp-transport');
 
 export interface IMailOptions extends Mail.Options { };
 
 export default class SapCfMailer {
     destinationPromise: Promise<IDestinationData<IMailDestinationConfiguration>>;
+    transportConfig: SMTPTransport.Options | undefined;
 
-    constructor(destinationName?: string) {
+    constructor(destinationName?: string, transportConfig?:  SMTPTransport.Options) {
         this.destinationPromise = readDestination<IMailDestinationConfiguration>(destinationName || "MAIL");
+        this.transportConfig = transportConfig;
     }
 
-    private async getTransporter() {
+    public async getTransporter() {
         const { destinationConfiguration } = await this.destinationPromise;
 
         if (!destinationConfiguration["mail.smtp"]) {
@@ -21,6 +24,7 @@ export default class SapCfMailer {
 
         // create reusable transporter object using the default SMTP transport
         return nodemailer.createTransport({
+            ...this.transportConfig,
             host: destinationConfiguration["mail.smtp"],
             port: parseInt(destinationConfiguration["mail.port"] || "587") || 587,
             secure: false, // true for 465, false for other ports
@@ -43,16 +47,10 @@ export default class SapCfMailer {
     }
 
     public async sendMailTemplate(mailOptionsIn: IMailOptions, mailValues: any) {
-        const mailOptions = {...mailOptionsIn}
-        if (mailOptions.html) {
-            const HtmlTemplate = Mustache.parse(mailOptions.html.toString());
-            mailOptions.html = Mustache.render(HtmlTemplate, mailValues)
-        }
-        if (mailOptions.text) {
-            const TextTemplate = Mustache.parse(mailOptions.text.toString());
-            mailOptions.text = Mustache.render(TextTemplate, mailValues);
-        }
-
-        return this.sendMail(mailOptions);
+        return this.sendMail({ 
+            ...mailOptionsIn, 
+            html: mailOptionsIn.html ? Mustache.render(mailOptionsIn.html.toString(), mailValues) : undefined,
+            text: mailOptionsIn.text ? Mustache.render(mailOptionsIn.text.toString(), mailValues) : undefined
+        });
     }
 }
