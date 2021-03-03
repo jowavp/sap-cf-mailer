@@ -40,14 +40,21 @@ class SapCfMailer {
     getTransporter() {
         return __awaiter(this, void 0, void 0, function* () {
             const { destinationConfiguration } = yield this.destinationPromise;
-            if (!destinationConfiguration["mail.smtp"]) {
-                throw (`No SMTP address found in the mail destination. Please define a 'mail.smtp' property in your destination`);
+            if (!destinationConfiguration["mail.smtp.host"] && !destinationConfiguration["mail.smtp"]) {
+                throw (`No SMTP address found in the mail destination. Please define a 'mail.smtp.host' property in your destination`);
+            }
+            let proxy;
+            if (destinationConfiguration.ProxyType.toLowerCase() === 'onpremise') {
+                throw (`At this moment we do not support the onpremise SMTP server.`);
+                //    const connectivity = await readConnectivity(destinationConfiguration.CloudConnectorLocationId);
+                //    proxy = `socks5://${connectivity.proxy.host}:${connectivity.onpremise_socks5_proxy_port}`
             }
             // create reusable transporter object using the default SMTP transport
-            return nodemailer.createTransport(Object.assign(Object.assign({}, this.transportConfig), { host: destinationConfiguration["mail.smtp.host"] || destinationConfiguration["mail.smtp"], port: parseInt(destinationConfiguration["mail.smtp.port"] || destinationConfiguration["mail.port"] || "587") || 587, secure: false, auth: {
+            const transporter = nodemailer.createTransport(Object.assign(Object.assign({}, this.transportConfig), { host: destinationConfiguration["mail.smtp.host"] || destinationConfiguration["mail.smtp"], port: parseInt(destinationConfiguration["mail.smtp.port"] || destinationConfiguration["mail.port"] || "587") || 587, secure: false, auth: {
                     user: destinationConfiguration["mail.user"],
                     pass: destinationConfiguration["mail.password"] // generated ethereal password
-                } }));
+                }, proxy }));
+            return transporter;
         });
     }
     sendMail(mailOptions) {
@@ -55,7 +62,7 @@ class SapCfMailer {
             const transporter = yield this.getTransporter();
             const { destinationConfiguration } = yield this.destinationPromise;
             if (!mailOptions.from) {
-                mailOptions.from = destinationConfiguration["mail.from"] || destinationConfiguration["mail.user"];
+                mailOptions.from = destinationConfiguration["mail.smtp.from"] || destinationConfiguration["mail.from"] || destinationConfiguration["mail.user"];
             }
             return transporter.sendMail(mailOptions);
         });

@@ -1,6 +1,6 @@
 import * as nodemailer from 'nodemailer'
 import * as Mustache from 'mustache'
-import { readDestination, IMailDestinationConfiguration, IDestinationData } from 'sap-cf-destconn'
+import { readDestination, IMailDestinationConfiguration, IDestinationData, readConnectivity } from 'sap-cf-destconn'
 import Mail = require('nodemailer/lib/mailer')
 import SMTPTransport = require('nodemailer/lib/smtp-transport');
 
@@ -12,20 +12,26 @@ export default class SapCfMailer {
 
     constructor(destinationName?: string, transportConfig?:  SMTPTransport.Options) {
         this.destinationPromise = readDestination<IMailDestinationConfiguration>(destinationName || "MAIL");
+
         this.transportConfig = transportConfig;
     }
 
     public async getTransporter() {
         const { destinationConfiguration } = await this.destinationPromise;
 
-        if (!destinationConfiguration["mail.smtp"]) {
-            throw (`No SMTP address found in the mail destination. Please define a 'mail.smtp' property in your destination`)
+        if (!destinationConfiguration["mail.smtp.host"] && !destinationConfiguration["mail.smtp"]) {
+            throw (`No SMTP address found in the mail destination. Please define a 'mail.smtp.host' property in your destination`)
         }
 
-        
+        let proxy;
+        if (destinationConfiguration.ProxyType.toLowerCase() === 'onpremise') {
+            throw (`At this moment we do not support the onpremise SMTP server.`)
+        //    const connectivity = await readConnectivity(destinationConfiguration.CloudConnectorLocationId);
+        //    proxy = `socks5://${connectivity.proxy.host}:${connectivity.onpremise_socks5_proxy_port}`
+        }
 
         // create reusable transporter object using the default SMTP transport
-        return nodemailer.createTransport({
+        const transporter  = nodemailer.createTransport(<SMTPTransport.Options>{
             ...this.transportConfig,
             host: destinationConfiguration["mail.smtp.host"] || destinationConfiguration["mail.smtp"],
             port: parseInt(destinationConfiguration["mail.smtp.port"] || destinationConfiguration["mail.port"] || "587") || 587,
@@ -33,8 +39,11 @@ export default class SapCfMailer {
             auth: {
                 user: destinationConfiguration["mail.user"], // generated ethereal user
                 pass: destinationConfiguration["mail.password"] // generated ethereal password
-            }
+            },
+            proxy
         });
+
+        return transporter;
     }
 
     public async sendMail(mailOptions: IMailOptions) {
@@ -42,7 +51,7 @@ export default class SapCfMailer {
         const { destinationConfiguration } = await this.destinationPromise;
 
         if (!mailOptions.from) {
-            mailOptions.from = destinationConfiguration["mail.from"] || destinationConfiguration["mail.user"];
+            mailOptions.from = destinationConfiguration["mail.smtp.from"] ||  destinationConfiguration["mail.from"] || destinationConfiguration["mail.user"];
         }
 
         return transporter.sendMail(mailOptions)
