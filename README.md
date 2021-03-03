@@ -1,4 +1,6 @@
 # sap-cf-mailer
 Send emails in SAP Cloud Foundry using MAIL destinations 
 
-## TODO
+## Installation
+
+npm i -s sap-cf-mailer
