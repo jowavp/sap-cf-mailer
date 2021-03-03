@@ -22,11 +22,13 @@ export default class SapCfMailer {
             throw (`No SMTP address found in the mail destination. Please define a 'mail.smtp' property in your destination`)
         }
 
+        
+
         // create reusable transporter object using the default SMTP transport
         return nodemailer.createTransport({
             ...this.transportConfig,
-            host: destinationConfiguration["mail.smtp"],
-            port: parseInt(destinationConfiguration["mail.port"] || "587") || 587,
+            host: destinationConfiguration["mail.smtp.host"] || destinationConfiguration["mail.smtp"],
+            port: parseInt(destinationConfiguration["mail.smtp.port"] || destinationConfiguration["mail.port"] || "587") || 587,
             secure: false, // true for 465, false for other ports
             auth: {
                 user: destinationConfiguration["mail.user"], // generated ethereal user

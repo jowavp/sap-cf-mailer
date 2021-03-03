@@ -44,7 +44,7 @@ class SapCfMailer {
                 throw (`No SMTP address found in the mail destination. Please define a 'mail.smtp' property in your destination`);
             }
             // create reusable transporter object using the default SMTP transport
-            return nodemailer.createTransport(Object.assign(Object.assign({}, this.transportConfig), { host: destinationConfiguration["mail.smtp"], port: parseInt(destinationConfiguration["mail.port"] || "587") || 587, secure: false, auth: {
+            return nodemailer.createTransport(Object.assign(Object.assign({}, this.transportConfig), { host: destinationConfiguration["mail.smtp.host"] || destinationConfiguration["mail.smtp"], port: parseInt(destinationConfiguration["mail.smtp.port"] || destinationConfiguration["mail.port"] || "587") || 587, secure: false, auth: {
                     user: destinationConfiguration["mail.user"],
                     pass: destinationConfiguration["mail.password"] // generated ethereal password
                 } }));
