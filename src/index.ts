@@ -10,8 +10,8 @@ export default class SapCfMailer {
     destinationPromise: Promise<IDestinationData<IMailDestinationConfiguration>>;
     transportConfig: SMTPTransport.Options | undefined;
 
-    constructor(destinationName?: string, transportConfig?:  SMTPTransport.Options) {
-        this.destinationPromise = readDestination<IMailDestinationConfiguration>(destinationName || "MAIL");
+    constructor(destinationName?: string, transportConfig?:  SMTPTransport.Options, subscribedDomain?: string) {
+        this.destinationPromise = readDestination<IMailDestinationConfiguration>(destinationName || "MAIL", undefined, subscribedDomain);
 
         this.transportConfig = transportConfig;
     }
