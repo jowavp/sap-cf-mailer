@@ -33,8 +33,8 @@ const Mustache = __importStar(require("mustache"));
 const sap_cf_destconn_1 = require("sap-cf-destconn");
 ;
 class SapCfMailer {
-    constructor(destinationName, transportConfig) {
-        this.destinationPromise = sap_cf_destconn_1.readDestination(destinationName || "MAIL");
+    constructor(destinationName, transportConfig, subscribedDomain) {
+        this.destinationPromise = sap_cf_destconn_1.readDestination(destinationName || "MAIL", undefined, subscribedDomain);
         this.transportConfig = transportConfig;
     }
     getTransporter() {

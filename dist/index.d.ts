@@ -6,7 +6,7 @@ export interface IMailOptions extends Mail.Options {
 export default class SapCfMailer {
     destinationPromise: Promise<IDestinationData<IMailDestinationConfiguration>>;
     transportConfig: SMTPTransport.Options | undefined;
-    constructor(destinationName?: string, transportConfig?: SMTPTransport.Options);
+    constructor(destinationName?: string, transportConfig?: SMTPTransport.Options, subscribedDomain?: string);
     getTransporter(): Promise<Mail>;
     sendMail(mailOptions: IMailOptions): Promise<any>;
     sendMailTemplate(mailOptionsIn: IMailOptions, mailValues: any): Promise<any>;
